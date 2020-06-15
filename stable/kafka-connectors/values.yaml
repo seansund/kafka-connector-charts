@@ -1,0 +1,190 @@
+# Default values for rmq-connector.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: image-registry.openshift-image-registry.svc:5000/rabbitmq/kafka-connect-jdbc-sink
+  tag: latest
+  pullPolicy: Always
+
+volumeMounts:
+  name: kafka-cert
+  mountPath: "/opt/kafka/es-cert.jks"
+  subPath: es-cert.jks
+volumes:
+  secretName: kafka-cert
+
+ports:
+  name: http
+  port: 8083
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8083
+  metadata:
+    namespace: rabbitmq
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  path: /
+  hosts:
+    - chart-example.local
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+connectDistributedProperties: |-
+    # Licensed to the Apache Software Foundation (ASF) under one or more
+    # contributor license agreements.  See the NOTICE file distributed with
+    # this work for additional information regarding copyright ownership.
+    # The ASF licenses this file to You under the Apache License, Version 2.0
+    # (the "License"); you may not use this file except in compliance with
+    # the License.  You may obtain a copy of the License at
+    #
+    #    http://www.apache.org/licenses/LICENSE-2.0ç
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    ##
+
+    # This file contains some of the configurations for the Kafka Connect distributed worker. This file is intended
+    # to be used with the examples, and some settings may differ from those used in a production system, especially
+    # the `bootstrap.servers` and those specifying replication factors.
+
+    # A list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
+    # tch-kafka-dev-ibm-es-proxy-svc:30000
+    bootstrap.servers=es-cp4i-ibm-es-proxy-route-bootstrap-eventstreams-cp4i.gse-eda-demo-202005-fa9ee67c9ab6a7791435450358e564cc-0000.us-south.containers.appdomain.cloud:443
+    security.protocol=SASL_SSL
+    ssl.protocol=TLSv1.2
+    ssl.truststore.location=/opt/kafka/es-cert.jks
+    ssl.truststore.password=password
+    sasl.mechanism=PLAIN
+    sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="token" password="40ZcIcdfWlJ003jQKXDka16RaJGjLHrbSL9lubjQWfB3";
+    producer.security.protocol=SASL_SSL
+    producer.ssl.protocol=TLSv1.2
+    producer.ssl.truststore.location=/opt/kafka/es-cert.jks
+    producer.ssl.truststore.password=password
+    producer.sasl.mechanism=PLAIN
+    producer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="token" password="40ZcIcdfWlJ003jQKXDka16RaJGjLHrbSL9lubjQWfB3";
+    consumer.security.protocol=SASL_SSL
+    consumer.ssl.protocol=TLSv1.2
+    consumer.ssl.truststore.location=/opt/kafka/es-cert.jks
+    consumer.ssl.truststore.password=password
+    consumer.sasl.mechanism=PLAIN
+    consumer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="token" password="40ZcIcdfWlJ003jQKXDka16RaJGjLHrbSL9lubjQWfB3";
+    # unique name for the cluster, used in forming the Connect cluster group. Note that this must not conflict with consumer group IDs
+    group.id=jdbc1-source-connect-cluster
+
+    # The converters specify the format of data in Kafka and how to translate it into Connect data. Every Connect user will
+    # need to configure these based on the format they want their data in when loaded from or stored into Kafka
+    key.converter=com.ibm.eventstreams.connect.avroconverter.AvroConverter
+    value.converter=com.ibm.eventstreams.connect.avroconverter.AvroConverter
+    # Converter-specific settings can be passed in by prefixing the Converter's setting with the converter we want to apply
+    # it to
+    key.converter.schemas.enable=false
+    value.converter.schemas.enable=false
+
+    # Topic to use for storing offsets. This topic should have many partitions and be replicated and compacted.
+    # Kafka Connect will attempt to create the topic automatically when needed, but you can always manually create
+    # the topic before starting Kafka Connect if a specific topic configuration is needed.
+    # Most users will want to use the built-in default replication factor of 3 or in some cases even specify a larger value.
+    # Since this means there must be at least as many brokers as the maximum replication factor used, we'd like to be able
+    # to run this example on a single-broker cluster and so here we instead set the replication factor to 1.
+    offset.storage.topic=connect-offsets-jdbc-4
+    offset.storage.replication.factor=1
+
+    # Topic to use for storing connector and task configurations; note that this should be a single partition, highly replicated,
+    # and compacted topic. Kafka Connect will attempt to create the topic automatically when needed, but you can always manually create
+    # the topic before starting Kafka Connect if a specific topic configuration is needed.
+    # Most users will want to use the built-in default replication factor of 3 or in some cases even specify a larger value.
+    # Since this means there must be at least as many brokers as the maximum replication factor used, we'd like to be able
+    # to run this example on a single-broker cluster and so here we instead set the replication factor to 1.
+    config.storage.topic=connect-configs-jdbc-4
+    config.storage.replication.factor=1
+
+    # Topic to use for storing statuses. This topic can have multiple partitions and should be replicated and compacted.
+    # Kafka Connect will attempt to create the topic automatically when needed, but you can always manually create
+    # the topic before starting Kafka Connect if a specific topic configuration is needed.
+    # Most users will want to use the built-in default replication factor of 3 or in some cases even specify a larger value.
+    # Since this means there must be at least as many brokers as the maximum replication factor used, we'd like to be able
+    # to run this example on a single-broker cluster and so here we instead set the replication factor to 1.
+    status.storage.topic=connect-status-jdbc-4
+    status.storage.replication.factor=1
+
+    # Flush much faster than normal, which is useful for testing/debugging
+    offset.flush.interval.ms=10000
+
+    # These are provided to inform the user about the presence of the REST host and port configs 
+    # Hostname & Port for the REST API to listen on. If this is set, it will bind to the interface used to listen to requests.
+    #rest.host.name=
+    #rest.port=8083
+
+    # The Hostname & Port that will be given out to other workers to connect to i.e. URLs that are routable from other servers.
+    #rest.advertised.host.name=
+    #rest.advertised.port=
+
+    # Set to a list of filesystem paths separated by commas (,) to enable class loading isolation for plugins
+    # (connectors, converters, transformations). The list should consist of top level directories that include 
+    # any combination of: 
+    # a) directories immediately containing jars with plugins and their dependencies
+    # b) uber-jars with plugins and their dependencies
+    # c) directories immediately containing the package directory structure of classes of plugins and their dependencies
+    plugin.path=/opt/connectors
+
+    #avro stuff
+    key.converter.schema.registry.bootstrap.server=es-cp4i-ibm-es-proxy-route-bootstrap-eventstreams-cp4i.gse-eda-demo-202005-fa9ee67c9ab6a7791435450358e564cc-0000.us-south.containers.appdomain.cloud:443
+    key.converter.schema.registry.security.protocol=SASL_SSL
+    key.converter.schema.registry.ssl.protocol=TLSv1.2
+    key.converter.schema.registry.ssl.truststore.location=/opt/kafka/es-cert.jks
+    key.converter.schema.registry.ssl.truststore.password=password
+    key.converter.schema.registry.sasl.jaas.username=token
+    key.converter.schema.registry.sasl.jaas.password=vwKjy9ABs6oCLhZ71riACyKXYzcuXSjyRF0W1UkEtyCp
+    key.converter.schema.registry.property.api.url=https://es-cp4i-ibm-es-rest-route-eventstreams-cp4i.gse-eda-demo-202005-fa9ee67c9ab6a7791435450358e564cc-0000.us-south.containers.appdomain.cloud
+    key.converter.schema.registry.property.api.skip_ssl_validation=true
+    value.converter.schema.registry.bootstrap.server=es-cp4i-ibm-es-proxy-route-bootstrap-eventstreams-cp4i.gse-eda-demo-202005-fa9ee67c9ab6a7791435450358e564cc-0000.us-south.containers.appdomain.cloud:443
+    value.converter.schema.registry.security.protocol=SASL_SSL
+    value.converter.schema.registry.ssl.protocol=TLSv1.2
+    value.converter.schema.registry.ssl.truststore.location=/opt/kafka/es-cert.jks
+    value.converter.schema.registry.ssl.truststore.password=password
+    value.converter.schema.registry.sasl.jaas.username=token
+    value.converter.schema.registry.sasl.jaas.password=vwKjy9ABs6oCLhZ71riACyKXYzcuXSjyRF0W1UkEtyCp
+    value.converter.schema.registry.property.api.url=https://es-cp4i-ibm-es-rest-route-eventstreams-cp4i.gse-eda-demo-202005-fa9ee67c9ab6a7791435450358e564cc-0000.us-south.containers.appdomain.cloud
+    value.converter.schema.registry.property.api.skip_ssl_validation=true
+    schema.registry.bootstrap.server=es-cp4i-ibm-es-proxy-route-bootstrap-eventstreams-cp4i.gse-eda-demo-202005-fa9ee67c9ab6a7791435450358e564cc-0000.us-south.containers.appdomain.cloud:443
+    schema.registry.security.protocol=SASL_SSL
+    schema.registry.ssl.protocol=TLSv1.2
+    schema.registry.ssl.truststore.location=/opt/kafka/es-cert.jks
+    schema.registry.ssl.truststore.password=password
+    schema.registry.sasl.jaas.username=token
+    schema.registry.sasl.jaas.password=vwKjy9ABs6oCLhZ71riACyKXYzcuXSjyRF0W1UkEtyCp
+    schema.registry.property.api.url=https://es-cp4i-ibm-es-rest-route-eventstreams-cp4i.gse-eda-demo-202005-fa9ee67c9ab6a7791435450358e564cc-0000.us-south.containers.appdomain.cloud
+    schema.registry.property.api.skip_ssl_validation=true
+    schema.registry.sasl.mechanism=PLAIN

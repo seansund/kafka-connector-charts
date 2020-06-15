@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connector-config
+data:
+  connect-distributed.properties: |
+{{ required "The connect distributed properties must be set" .Values.connectDistributedProperties | indent 4 }}
