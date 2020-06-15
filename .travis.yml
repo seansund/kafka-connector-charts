@@ -10,6 +10,6 @@ env:
   global:
     - PUBLISH_BRANCH=gh-pages
     - PUBLISH_DIR=publish
-    - REPO_URL=https://ibm-garage-cloud.github.io/toolkit-charts/
+    - REPO_URL=https://seansund.github.io/kafka-connector-charts/
 branches:
   - master
